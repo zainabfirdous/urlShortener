@@ -14,7 +14,10 @@ const createUrl = async (req) => {
 		const cachedData = await redis.get(customAlias);
 		if (cachedData) {
 			const cacheResult = JSON.parse(cachedData);
-			return `${BASE_URL}/${cacheResult.alias}`;
+			return {
+				shortUrl: `${BASE_URL}/${cacheResult.alias}`,
+				createdAt: cacheResult.createdAt,
+			};
 		} else {
 			//checking if the user had already created short-url more than an hour ago since redis only stores key for 1hr
 			const existingUrl = await findOne({ originalUrl: longUrl });
@@ -37,7 +40,10 @@ const createUrl = async (req) => {
 					"EX",
 					3600
 				);
-				return `${BASE_URL}/${shortId}`;
+				return {
+					shortUrl: `${BASE_URL}/${shortId}`,
+					createdAt: shortUrlRecord.dataValues.createdAt,
+				};
 			} else {
 				//if short-url already exists in db setting it in redis and returning it
 				redis.set(
@@ -46,7 +52,10 @@ const createUrl = async (req) => {
 					"EX",
 					3600
 				);
-				return `${BASE_URL}/${existingUrl.dataValues.alias}`;
+				return {
+					shortUrl: `${BASE_URL}/${existingUrl.dataValues.alias}`,
+					createdAt: existingUrl.dataValues.createdAt,
+				};
 			}
 		}
 	} catch (err) {
