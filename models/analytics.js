@@ -15,6 +15,11 @@ const analytics = sequelize.define(
 			type: DataTypes.UUID,
 			allowNull: false,
 		},
+		topic: {
+			type: DataTypes.STRING,
+			defaultValue: "Other",
+			allowNull: true,
+		},
 		uid: {
 			type: DataTypes.UUID,
 			allowNull: true,
@@ -77,6 +82,12 @@ analytics.associate = (models) => {
 	analytics.belongsTo(models.shortUrl, {
 		foreignKey: "shortId",
 		as: "shortId",
+		onDelete: "CASCADE",
+	});
+
+	analytics.belongsTo(models.shortUrl, {
+		foreignKey: "topic",
+		as: "topic",
 		onDelete: "CASCADE",
 	});
 };

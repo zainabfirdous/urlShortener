@@ -72,6 +72,12 @@ shortUrl.associate = (models) => {
 		as: "shorturl",
 		onDelete: "CASCADE",
 	});
+
+	shortUrl.hasMany(models.analytics, {
+		foreignKey: "topic",
+		as: "topic",
+		onDelete: "CASCADE",
+	});
 };
 
 module.exports = { shortUrl };

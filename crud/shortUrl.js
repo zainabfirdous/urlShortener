@@ -19,7 +19,17 @@ const create = async (record) => {
 	}
 };
 
+const findAll = async (cond) => {
+	try {
+		const result = await shortUrl.findAll({ where: cond });
+		return result;
+	} catch (err) {
+		throw err;
+	}
+};
+
 module.exports = {
 	findOne,
 	create,
+	findAll,
 };
