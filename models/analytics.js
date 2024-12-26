@@ -20,8 +20,13 @@ const analytics = sequelize.define(
 			defaultValue: "Other",
 			allowNull: true,
 		},
+		createdBy: {
+			type: DataTypes.UUID,
+			allowNull: true,
+		},
 		uid: {
 			type: DataTypes.UUID,
+			defaultValue: "Other",
 			allowNull: true,
 		},
 		os: {
@@ -44,6 +49,10 @@ const analytics = sequelize.define(
 			type: DataTypes.DECIMAL(9, 6),
 			allowNull: true,
 		},
+		clickedAt: {
+			type: DataTypes.DATEONLY,
+			allowNull: false,
+		},
 	},
 	{
 		tableName: "analytics",
@@ -62,7 +71,7 @@ const analytics = sequelize.define(
 			},
 			{
 				unique: false,
-				fields: ["uid"],
+				fields: ["createdBy"],
 			},
 			{
 				unique: true,
@@ -73,15 +82,15 @@ const analytics = sequelize.define(
 );
 
 analytics.associate = (models) => {
-	analytics.belongsTo(models.User, {
-		foreignKey: "uid",
-		as: "uid",
+	analytics.belongsTo(models.shortUrl, {
+		foreignKey: "shortId",
+		as: "shortId",
 		onDelete: "CASCADE",
 	});
 
 	analytics.belongsTo(models.shortUrl, {
-		foreignKey: "shortId",
-		as: "shortId",
+		foreignKey: "uid",
+		as: "createdBy",
 		onDelete: "CASCADE",
 	});
 

@@ -1,4 +1,8 @@
-const { aliasAnalytics, topicAnalytics } = require("../service/analytics");
+const {
+	aliasAnalytics,
+	topicAnalytics,
+	overallAnalysis,
+} = require("../service/analytics");
 
 const detailedAliasAnalytics = async (req) => {
 	try {
@@ -18,4 +22,13 @@ const topicAnalysis = async (req) => {
 	}
 };
 
-module.exports = { detailedAliasAnalytics, topicAnalysis };
+const overallAnalytics = async (req) => {
+	try {
+		const resp = await overallAnalysis(req);
+		return resp;
+	} catch (err) {
+		throw err;
+	}
+};
+
+module.exports = { detailedAliasAnalytics, topicAnalysis, overallAnalytics };

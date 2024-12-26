@@ -43,7 +43,7 @@ const count_analysis = async (cond) => {
 };
 
 //this function's only responsibility is to find date of analytics record and clicks in recent 7 days based on a cond
-const clickByDates = async (field, value) => {
+const clickByDates = async (cond) => {
 	try {
 		//using moment to find the recent 7 days
 		const todayDate = moment().format("YYYY-MM-DD HH:mm:ss");
@@ -51,41 +51,34 @@ const clickByDates = async (field, value) => {
 			.subtract(7, "days")
 			.format("YYYY-MM-DD HH:mm:ss");
 
-		//this function is used for alias and also topic analytics, so creating find query based on the field
-		const dates =
-			field === "topic"
-				? await analytics.findAll({
-						where: {
-							topic: value,
-							createdAt: {
-								[Op.gte]: sevenDaysAgo,
-							},
-						},
-				  })
-				: await analytics.findAll({
-						where: {
-							shortId: value,
-							createdAt: {
-								[Op.gte]: sevenDaysAgo,
-							},
-						},
-				  });
+		//adding createdAt condition to the given cond
+		const search = {
+			...cond,
+			createdAt: {
+				[Op.gte]: sevenDaysAgo,
+			},
+		};
+
+		//finding all records based on the given cond
+		const dates = await analytics_findAll(search);
 
 		let clicksArray = [];
 		for (const item of dates) {
 			let analysisObject = {};
 			//checking if this date is already pushed into the array
 			const existing_record = clicksArray.find((object) =>
-				moment(object.date).isSame(item.dataValues.createdAt)
+				moment(object.date).isSame(item.dataValues.clickedAt)
 			);
 
 			if (!existing_record) {
 				//finds total clicks on a given date
 				const clicks = await count_analysis({
-					where: { createdAt: item.dataValues.createdAt },
+					where: {
+						clickedAt: item.dataValues.clickedAt,
+					},
 				});
 				analysisObject = {
-					date: item.dataValues.createdAt,
+					date: item.dataValues.clickedAt,
 					clicks: clicks,
 				};
 				clicksArray.push(analysisObject);
@@ -99,12 +92,10 @@ const clickByDates = async (field, value) => {
 };
 
 //this function's only responsibility is to find analytics based on OS such as uniqueclicks for a os etc
-const osAnalysis = async (shortId) => {
+const osAnalysis = async (cond) => {
 	try {
 		//finds all records of a shortUrl
-		const analysisRecords = await analytics_findAll({
-			shortId: shortId,
-		});
+		const analysisRecords = await analytics_findAll(cond);
 		let osArray = [];
 		for (records of analysisRecords) {
 			let osAnalysisObject = {};
@@ -124,7 +115,12 @@ const osAnalysis = async (shortId) => {
 					count_analysis({
 						distinct: true,
 						col: "os",
-						where: { uid: records.dataValues.uid },
+						where: {
+							uid: records.dataValues.uid,
+							uid: {
+								[Op.ne]: "Other",
+							},
+						},
 					}),
 				]);
 
@@ -133,9 +129,11 @@ const osAnalysis = async (shortId) => {
 					uniqueclicks: osCount,
 					uniqueUser: userCount,
 				};
+
 				osArray.push(osAnalysisObject);
 			}
 		}
+
 		return osArray;
 	} catch (err) {
 		console.log(err);
@@ -144,12 +142,10 @@ const osAnalysis = async (shortId) => {
 };
 
 //this function's only responsibility is to find analytics based on deviceType such as uniqueclicks for a deviceType etc
-const deviceAnalysis = async (shortId) => {
+const deviceAnalysis = async (cond) => {
 	try {
 		//finds all records for a shortUrl
-		const analysisRecords = await analytics_findAll({
-			shortId: shortId,
-		});
+		const analysisRecords = await analytics_findAll(cond);
 		let deviceArray = [];
 		for (records of analysisRecords) {
 			let deviceAnalysisObject = {};
@@ -169,7 +165,12 @@ const deviceAnalysis = async (shortId) => {
 					count_analysis({
 						distinct: true,
 						col: "deviceType",
-						where: { uid: records?.dataValues?.uid },
+						where: {
+							uid: records?.dataValues?.uid,
+							uid: {
+								[Op.ne]: "Other",
+							},
+						},
 					}),
 				]);
 

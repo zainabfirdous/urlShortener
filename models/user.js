@@ -43,12 +43,6 @@ const User = sequelize.define(
 User.associate = (models) => {
 	User.hasMany(models.shortUrl, {
 		foreignKey: "uid",
-		as: "shorturl",
-		onDelete: "CASCADE",
-	});
-
-	User.hasMany(models.analytics, {
-		foreignKey: "uid",
 		as: "uid",
 		onDelete: "CASCADE",
 	});

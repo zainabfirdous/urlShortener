@@ -1,8 +1,11 @@
 const Redis = require("ioredis");
 
-/*my redis server is running on default settings, ie., local host, 6379 port,
+/*my redis server is running on my local host, 6379 port,
 incase your redis server has different config please alter accordingly*/
-const redis = new Redis();
+const redis = new Redis({
+	host: "localhost",
+	port: 6379,
+});
 
 const disconnectRedis = async () => {
 	try {

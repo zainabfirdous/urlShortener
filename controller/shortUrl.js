@@ -11,13 +11,9 @@ const createShortUrl = async (req, res) => {
 
 const redirectShortUrl = async (req, res) => {
 	try {
-		console.log(req.params.alias);
-
 		const originalUrl = await redirectUrl(req);
-		console.log("error in try c");
 		return originalUrl;
 	} catch (err) {
-		console.log("error in controller");
 		throw err;
 	}
 };

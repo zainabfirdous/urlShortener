@@ -41,7 +41,7 @@ const shortUrl = sequelize.define(
 		tableName: "short_url",
 		indexes: [
 			{
-				unique: true,
+				unique: false,
 				fields: ["uid"],
 			},
 			{
@@ -53,7 +53,7 @@ const shortUrl = sequelize.define(
 				fields: ["originalUrl"],
 			},
 			{
-				unique: true,
+				unique: false,
 				fields: ["topic"],
 			},
 		],
@@ -69,13 +69,19 @@ shortUrl.associate = (models) => {
 
 	shortUrl.hasMany(models.analytics, {
 		foreignKey: "shortId",
-		as: "shorturl",
+		as: "shortId",
 		onDelete: "CASCADE",
 	});
 
 	shortUrl.hasMany(models.analytics, {
 		foreignKey: "topic",
 		as: "topic",
+		onDelete: "CASCADE",
+	});
+
+	shortUrl.hasMany(models.analytics, {
+		foreignKey: "uid",
+		as: "createdBy",
 		onDelete: "CASCADE",
 	});
 };

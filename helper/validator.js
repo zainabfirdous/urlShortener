@@ -10,6 +10,9 @@ const redirectForm = JOI.object({
 	alias: JOI.string().required(),
 });
 
+const accForm = JOI.object({
+	accessToken: JOI.string().required(),
+});
 class Validator {
 	constructor() {}
 
@@ -18,8 +21,11 @@ class Validator {
 	}
 
 	async isValidRedirectForm(alias = "") {
-		console.log(alias);
 		return await redirectForm.validateAsync(alias);
+	}
+
+	async isValidAccForm(body = {}) {
+		return await accForm.validateAsync(body);
 	}
 }
 

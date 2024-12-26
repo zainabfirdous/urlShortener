@@ -5,8 +5,9 @@ const {
 	osAnalysis,
 	deviceAnalysis,
 } = require("../crud/analytics");
-const { findOne, findAll } = require("../crud/shortUrl");
+const { findOne, findAll, url_count } = require("../crud/shortUrl");
 const { BASE_URL } = require("../constant");
+const { Op } = require("sequelize");
 
 //create analytics for a given alias
 const aliasAnalytics = async (req) => {
@@ -20,6 +21,9 @@ const aliasAnalytics = async (req) => {
 			//finds shortUrl for the given alias
 			const shortUrl = await findOne({ alias: req.params.alias });
 			const shortUrlId = shortUrl.dataValues.shortId;
+			const cond = {
+				shortId: shortUrlId,
+			};
 			const [totalClicks, uniqueClicks, clicksByDate, osType, deviceType] =
 				await Promise.all([
 					//total clicks for a given shortUrl
@@ -32,11 +36,16 @@ const aliasAnalytics = async (req) => {
 					count_analysis({
 						distinct: true,
 						col: "uid",
-						where: { shortId: shortUrlId },
+						where: {
+							shortId: shortUrlId,
+							uid: {
+								[Op.ne]: "Other",
+							},
+						},
 					}),
-					clickByDates("shortId", shortUrlId),
-					osAnalysis(shortUrlId),
-					deviceAnalysis(shortUrlId),
+					clickByDates(cond),
+					osAnalysis(cond),
+					deviceAnalysis(cond),
 				]);
 
 			const response_object = {
@@ -70,6 +79,7 @@ const topicAnalytics = async (req) => {
 			const allUrls = await findAll({ topic: topic });
 			let urls = [];
 			for (const url of allUrls) {
+				console.log(url);
 				let urlObject = {};
 				const [totalClicks, uniqueUsers] = await Promise.all([
 					//total clciks on a shortUrl
@@ -82,7 +92,12 @@ const topicAnalytics = async (req) => {
 					count_analysis({
 						distinct: true,
 						col: "uid",
-						where: { shortId: url.dataValues.shortId },
+						where: {
+							shortId: url.dataValues.shortId,
+							uid: {
+								[Op.ne]: "Other",
+							},
+						},
 					}),
 				]);
 
@@ -96,6 +111,9 @@ const topicAnalytics = async (req) => {
 
 				urls.push(urlObject);
 			}
+			let cond = {
+				topic: topic,
+			};
 			const [totalClicks, uniqueClicks, clicksByDate] = await Promise.all([
 				//total clicks based on topic
 				count_analysis({
@@ -105,9 +123,14 @@ const topicAnalytics = async (req) => {
 				count_analysis({
 					distinct: true,
 					col: "uid",
-					where: { topic: topic },
+					where: {
+						topic: topic,
+						uid: {
+							[Op.ne]: "Other",
+						},
+					},
 				}),
-				clickByDates("topic", topic),
+				clickByDates(cond),
 			]);
 
 			const response_object = {
@@ -117,7 +140,7 @@ const topicAnalytics = async (req) => {
 				urls: urls,
 			};
 
-			redis.set(topic, JSON.stringify(response_object), "EX", 3600);
+			redis.set(topic, JSON.stringify(response_object), "EX", 1800);
 			return response_object;
 		}
 	} catch (err) {
@@ -125,4 +148,60 @@ const topicAnalytics = async (req) => {
 	}
 };
 
-module.exports = { aliasAnalytics, topicAnalytics };
+const overallAnalysis = async (req) => {
+	try {
+		const { uid } = req.userDetails;
+		const cacheResult = await redis.get(uid);
+		if (cacheResult) {
+			const cacheData = JSON.parse(cacheResult);
+			return cacheData;
+		} else {
+			const cond = {
+				createdBy: uid,
+			};
+			const [
+				totalUrls,
+				totalClicks,
+				uniqueUsers,
+				clicksByDate,
+				osType,
+				deviceType,
+			] = await Promise.all([
+				url_count({ where: { uid: uid } }),
+				count_analysis({
+					where: {
+						createdBy: uid,
+					},
+				}),
+				count_analysis({
+					distinct: true,
+					col: "uid",
+					where: {
+						createdBy: uid,
+						uid: {
+							[Op.ne]: "Other",
+						},
+					},
+				}),
+				clickByDates(cond),
+				osAnalysis(cond),
+				deviceAnalysis(cond),
+			]);
+
+			const resp_object = {
+				totalUrls: totalUrls,
+				totalClicks: totalClicks,
+				uniqueClicks: uniqueUsers,
+				clicksByDates: clicksByDate,
+				osType: osType,
+				deviceType: deviceType,
+			};
+
+			redis.set(uid, JSON.stringify(resp_object), "EX", 1800);
+			return resp_object;
+		}
+	} catch (Err) {
+		throw Err;
+	}
+};
+module.exports = { aliasAnalytics, topicAnalytics, overallAnalysis };

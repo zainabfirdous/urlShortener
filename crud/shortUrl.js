@@ -24,6 +24,17 @@ const findAll = async (cond) => {
 		const result = await shortUrl.findAll({ where: cond });
 		return result;
 	} catch (err) {
+		console.log(err);
+		throw err;
+	}
+};
+
+//uses sequelize count function to create a count sql query
+const url_count = async (cond) => {
+	try {
+		const result = await shortUrl.count(cond);
+		return result;
+	} catch (err) {
 		throw err;
 	}
 };
@@ -32,4 +43,5 @@ module.exports = {
 	findOne,
 	create,
 	findAll,
+	url_count,
 };

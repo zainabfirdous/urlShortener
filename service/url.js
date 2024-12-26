@@ -9,7 +9,7 @@ const axios = require("axios");
 const createUrl = async (req) => {
 	try {
 		const { longUrl, customAlias = "", topic = "" } = req.body;
-
+		const { uid } = req.userDetails;
 		//checking if the user had already created short-url and saved in redis
 		const cachedData = await redis.get(customAlias);
 		if (cachedData) {
@@ -32,6 +32,7 @@ const createUrl = async (req) => {
 					originalUrl: longUrl,
 					alias: shortId,
 					topic: topic,
+					uid: uid,
 				});
 				//setting the shortUrl details in redis for 1 hour since the user may click on shorturl
 				redis.set(
@@ -89,35 +90,40 @@ const redirectUrl = async (req) => {
 			longitude: long,
 		};
 
-		//checking if the short-url exists in redis
+		//checking the same cache as one set during createUrl in case user wantes to check redirect feature
 		const cachedData = await redis.get(alias);
 		if (cachedData) {
 			const cacheResult = JSON.parse(cachedData);
-			analyticsRecord = { ...analyticsRecord, shortId: cacheResult.shortId };
-			//inserting analytics data into db
+			analyticsRecord = {
+				...analyticsRecord,
+				shortId: cacheResult.shortId,
+				createdBy: cacheResult.createdBy,
+				topic: cacheResult.topic,
+				clickedAt: new Date(),
+			};
+
 			await analytics_create(analyticsRecord);
 			return cacheResult.originalUrl;
 		} else {
 			//finding shortUrl in db and returning the longUrl to controller
 			const existingUrl = await findOne({ alias: alias });
+
 			analyticsRecord = {
 				...analyticsRecord,
 				shortId: existingUrl.dataValues.shortId,
+				createdBy: existingUrl.dataValues.uid,
+				topic: existingUrl.dataValues.topic,
+				clickedAt: new Date(),
 			};
+
 			await analytics_create(analyticsRecord);
 			return existingUrl.dataValues.originalUrl;
 		}
 	} catch (err) {
-		if (err instanceof TypeError) {
-			const error = new Error("The shortUrl doesn't exists!");
-			error.status = 404;
-			throw error;
-		} else {
-			const error = new Error("Something went wrong!!");
-			error.details = err;
-			error.status = 500;
-			throw error;
-		}
+		const error = new Error("Something went wrong!!");
+		error.details = err;
+		error.status = 500;
+		throw error;
 	}
 };
 

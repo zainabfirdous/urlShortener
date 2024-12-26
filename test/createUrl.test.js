@@ -20,6 +20,7 @@ describe("creating a short-url", () => {
 			id: 1,
 			originalUrl: "example.com/link/deeplink",
 			alias: "short",
+			createdAt: "26-12-2024T19:45:00",
 		};
 		create.mockResolvedValue(newShortUrl);
 
@@ -28,11 +29,17 @@ describe("creating a short-url", () => {
 				longUrl: "example/link/deeplink/deeperlink",
 				customAlias: "short",
 			},
+			userDetails: {
+				uid: "string",
+			},
 		};
 
 		const response = await createUrl(req);
-
-		expect(response).toBe("http://localhost:3000/short");
+		const ob = {
+			createdAt: undefined,
+			shortUrl: "http://localhost:3000/short",
+		};
+		expect(response).toStrictEqual(ob);
 	});
 
 	it("longUrl already exists", async () => {
@@ -41,6 +48,7 @@ describe("creating a short-url", () => {
 				id: 1,
 				originalUrl: "example.com/link/deeplink",
 				alias: "short",
+				createdAt: "26-12-2024T19:45:00",
 			},
 		};
 		findOne.mockResolvedValue(existingShortUrl);
@@ -50,11 +58,18 @@ describe("creating a short-url", () => {
 				longUrl: "example/link/deeplink/deeperlink",
 				customAlias: "short",
 			},
+			userDetails: {
+				uid: "string",
+			},
 		};
 
 		const response = await createUrl(req);
+		const ob = {
+			createdAt: undefined,
+			shortUrl: "http://localhost:3000/short",
+		};
+		expect(response).toStrictEqual(ob);
 
-		expect(response).toBe("http://localhost:3000/short");
 		expect(create).not.toHaveBeenCalled();
 	});
 });
